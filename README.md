@@ -1,4 +1,6 @@
-# Psydux
+# Psyducks
+
+Kind of like Redux
 
 All the goodies are in [`src/App.js`](src/App.js)
 
