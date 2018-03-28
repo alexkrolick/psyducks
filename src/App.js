@@ -3,20 +3,33 @@ import "./App.css";
 
 const createStore = (reducer, { getState, setState }) => {
   return {
-    dispatch: action => setState(reducer(getState(), action)),
-    getState
+    dispatch: action => {
+      const nextState = reducer(getState(), action);
+      setState(nextState);
+    },
+    getState,
   };
 };
 
 const createReactBackingStore = (instance, key) => ({
   getState: () => instance.state[key],
-  setState: store => instance.setState({ [key]: store })
+  setState: nextState => instance.setState({ [key]: nextState }),
 });
 
+const createGenericBackingStore = (initialState = {}) => {
+  let _store = { ...initialState };
+  return {
+    getState: () => _store,
+    setState: nextState => {
+      _store = nextState;
+    },
+  };
+};
+
 const actions = {
-  inc: 'INC',
-  dec: 'DEC',
-}
+  inc: "INC",
+  dec: "DEC",
+};
 
 const reducer = (state, action) => {
   switch (action.type) {
@@ -31,19 +44,55 @@ const reducer = (state, action) => {
 
 const StoreContext = React.createContext();
 
-class Provider extends Component {
-  store = createStore(
-    reducer,
-    createReactBackingStore(this, "storeData")
-  );
+class ReactBackedProvider extends Component {
+  store = createStore(reducer, createReactBackingStore(this, "storeData"));
 
-  state = { storeData: { counter: 0 } };
+  state = {
+    storeData: { ...this.props.initialState },
+  };
 
   render() {
     return (
       <StoreContext.Provider
-        value={{ state: this.store.getState(), dispatch: this.store.dispatch }}
+        value={{
+          state: this.store.getState(),
+          dispatch: this.store.dispatch,
+        }}
       >
+        {this.props.children}
+      </StoreContext.Provider>
+    );
+  }
+}
+
+class GenericBackedProvider extends Component {
+  store = createStore(
+    reducer,
+    createGenericBackingStore(this.props.initialState)
+  );
+
+  dispatch = (...args) => {
+    this.store.dispatch.apply(this, args);
+    this.updateConsumers();
+  };
+
+  createNextConsumerState = () => ({
+    state: this.store.getState(),
+    dispatch: this.dispatch,
+  });
+
+  updateConsumers = () =>
+    this.setState({
+      store: this.createNextConsumerState(),
+    });
+
+  state = {
+    store: this.createNextConsumerState(),
+  };
+
+  render() {
+    return (
+      <StoreContext.Provider value={this.state.store}>
         {this.props.children}
       </StoreContext.Provider>
     );
@@ -53,22 +102,48 @@ class Provider extends Component {
 class App extends Component {
   render() {
     return (
-      <Provider>
-        <p>
-          Count:{" "}
+      <React.Fragment>
+        <ReactBackedProvider initialState={{ counter: 0 }}>
+          <p>
+            Count:{" "}
+            <StoreContext.Consumer>
+              {({ state }) => state.counter}
+            </StoreContext.Consumer>
+          </p>
           <StoreContext.Consumer>
-            {({ state }) => state.counter}
+            {({ dispatch }) => (
+              <p>
+                <button onClick={() => dispatch({ type: actions.dec })}>
+                  - Dec
+                </button>
+                <button onClick={() => dispatch({ type: actions.inc })}>
+                  Inc +
+                </button>
+              </p>
+            )}
           </StoreContext.Consumer>
-        </p>
-        <StoreContext.Consumer>
-          {({ dispatch }) => (
-            <p>
-              <button onClick={() => dispatch({type: actions.dec})}>- Dec</button>
-              <button onClick={() => dispatch({type: actions.inc})}>Inc +</button>
-            </p>
-          )}
-        </StoreContext.Consumer>
-      </Provider>
+        </ReactBackedProvider>
+        <GenericBackedProvider initialState={{ counter: 0 }}>
+          <p>
+            Count:{" "}
+            <StoreContext.Consumer>
+              {({ state }) => state.counter}
+            </StoreContext.Consumer>
+          </p>
+          <StoreContext.Consumer>
+            {({ dispatch }) => (
+              <p>
+                <button onClick={() => dispatch({ type: actions.dec })}>
+                  - Dec
+                </button>
+                <button onClick={() => dispatch({ type: actions.inc })}>
+                  Inc +
+                </button>
+              </p>
+            )}
+          </StoreContext.Consumer>
+        </GenericBackedProvider>
+      </React.Fragment>
     );
   }
 }
