@@ -1,55 +1,56 @@
-import React, { Component } from "react";
-import "./App.css";
+import React, {Component} from 'react'
+import './App.css'
 
-const createStore = (reducer, { getState, setState }) => {
+const createStore = (reducer, {getState, setState}) => {
   return {
     dispatch: action => {
-      const nextState = reducer(getState(), action);
-      setState(nextState);
+      const nextState = reducer(getState(), action)
+      setState(nextState)
+      return action
     },
     getState,
-  };
-};
+  }
+}
 
 const createReactBackingStore = (instance, key) => ({
   getState: () => instance.state[key],
-  setState: nextState => instance.setState({ [key]: nextState }),
-});
+  setState: nextState => instance.setState({[key]: nextState}),
+})
 
 const createGenericBackingStore = (initialState = {}) => {
-  let _store = { ...initialState };
+  let _store = {...initialState}
   return {
     getState: () => _store,
     setState: nextState => {
-      _store = nextState;
+      _store = nextState
     },
-  };
-};
+  }
+}
 
 const actions = {
-  inc: "INC",
-  dec: "DEC",
-};
+  inc: 'INC',
+  dec: 'DEC',
+}
 
 const reducer = (state, action) => {
   switch (action.type) {
     case actions.inc:
-      return { ...state, counter: state.counter + 1 };
+      return {...state, counter: state.counter + 1}
     case actions.dec:
-      return { ...state, counter: state.counter - 1 };
+      return {...state, counter: state.counter - 1}
     default:
-      return state;
+      return state
   }
-};
+}
 
-const StoreContext = React.createContext();
+const StoreContext = React.createContext()
 
 class ReactBackedProvider extends Component {
-  store = createStore(reducer, createReactBackingStore(this, "storeData"));
+  store = createStore(reducer, createReactBackingStore(this, 'storeData'))
 
   state = {
-    storeData: { ...this.props.initialState },
-  };
+    storeData: {...this.props.initialState},
+  }
 
   render() {
     return (
@@ -61,7 +62,7 @@ class ReactBackedProvider extends Component {
       >
         {this.props.children}
       </StoreContext.Provider>
-    );
+    )
   }
 }
 
@@ -69,33 +70,33 @@ class GenericBackedProvider extends Component {
   store = createStore(
     reducer,
     createGenericBackingStore(this.props.initialState)
-  );
+  )
 
   dispatch = (...args) => {
-    this.store.dispatch.apply(this, args);
-    this.updateConsumers();
-  };
+    this.store.dispatch.apply(this, args)
+    this.updateConsumers()
+  }
 
   createNextConsumerState = () => ({
     state: this.store.getState(),
     dispatch: this.dispatch,
-  });
+  })
 
   updateConsumers = () =>
     this.setState({
       store: this.createNextConsumerState(),
-    });
+    })
 
   state = {
     store: this.createNextConsumerState(),
-  };
+  }
 
   render() {
     return (
       <StoreContext.Provider value={this.state.store}>
         {this.props.children}
       </StoreContext.Provider>
-    );
+    )
   }
 }
 
@@ -103,40 +104,42 @@ class App extends Component {
   render() {
     return (
       <React.Fragment>
-        <ReactBackedProvider initialState={{ counter: 0 }}>
+        <h2>React-Backed Store</h2>
+        <ReactBackedProvider initialState={{counter: 0}}>
           <p>
-            Count:{" "}
+            Count:{' '}
             <StoreContext.Consumer>
-              {({ state }) => state.counter}
+              {({state}) => state.counter}
             </StoreContext.Consumer>
           </p>
           <StoreContext.Consumer>
-            {({ dispatch }) => (
+            {({dispatch}) => (
               <p>
-                <button onClick={() => dispatch({ type: actions.dec })}>
+                <button onClick={() => dispatch({type: actions.dec})}>
                   - Dec
                 </button>
-                <button onClick={() => dispatch({ type: actions.inc })}>
+                <button onClick={() => dispatch({type: actions.inc})}>
                   Inc +
                 </button>
               </p>
             )}
           </StoreContext.Consumer>
         </ReactBackedProvider>
-        <GenericBackedProvider initialState={{ counter: 0 }}>
+        <h2>Generic Object Store</h2>
+        <GenericBackedProvider initialState={{counter: 0}}>
           <p>
-            Count:{" "}
+            Count:{' '}
             <StoreContext.Consumer>
-              {({ state }) => state.counter}
+              {({state}) => state.counter}
             </StoreContext.Consumer>
           </p>
           <StoreContext.Consumer>
-            {({ dispatch }) => (
+            {({dispatch}) => (
               <p>
-                <button onClick={() => dispatch({ type: actions.dec })}>
+                <button onClick={() => dispatch({type: actions.dec})}>
                   - Dec
                 </button>
-                <button onClick={() => dispatch({ type: actions.inc })}>
+                <button onClick={() => dispatch({type: actions.inc})}>
                   Inc +
                 </button>
               </p>
@@ -144,8 +147,8 @@ class App extends Component {
           </StoreContext.Consumer>
         </GenericBackedProvider>
       </React.Fragment>
-    );
+    )
   }
 }
 
-export default App;
+export default App
