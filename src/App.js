@@ -1,4 +1,8 @@
 import React, {Component} from 'react'
+import * as cb from 'callbag-basics'
+import observe from 'callbag-observe'
+import once from 'lodash.once'
+
 import './App.css'
 
 const createStore = (reducer, {getState, setState}) => {
@@ -9,21 +13,6 @@ const createStore = (reducer, {getState, setState}) => {
       return action
     },
     getState,
-  }
-}
-
-const createReactBackingStore = (instance, key) => ({
-  getState: () => instance.state[key],
-  setState: nextState => instance.setState({[key]: nextState}),
-})
-
-const createGenericBackingStore = (initialState = {}) => {
-  let _store = {...initialState}
-  return {
-    getState: () => _store,
-    setState: nextState => {
-      _store = nextState
-    },
   }
 }
 
@@ -45,6 +34,11 @@ const reducer = (state, action) => {
 
 const StoreContext = React.createContext()
 
+const createReactBackingStore = (instance, key) => ({
+  getState: () => instance.state[key],
+  setState: nextState => instance.setState({[key]: nextState}),
+})
+
 class ReactBackedProvider extends Component {
   store = createStore(reducer, createReactBackingStore(this, 'storeData'))
 
@@ -63,6 +57,16 @@ class ReactBackedProvider extends Component {
         {this.props.children}
       </StoreContext.Provider>
     )
+  }
+}
+
+const createGenericBackingStore = (initialState = {}) => {
+  let _store = {...initialState}
+  return {
+    getState: () => _store,
+    setState: nextState => {
+      _store = nextState
+    },
   }
 }
 
@@ -100,52 +104,88 @@ class GenericBackedProvider extends Component {
   }
 }
 
+const createCallbagBackingStore = (initialState = {}) => {
+  let store = {...initialState}
+  let observers = []
+
+  const subscribable = {
+    subscribe: observer => {
+      observers.push(observer)
+    },
+    notify: nextState => {
+      observers.forEach(o => o.next(nextState))
+    },
+  }
+
+  const source = cb.fromObs(subscribable)
+
+  return {
+    getState: () => store,
+    setState: nextState => {
+      store = nextState
+      subscribable.notify(nextState)
+    },
+    source,
+  }
+}
+
+class CallbagBackedProvider extends Component {
+  constructor(props) {
+    super(props)
+    const backingStore = createCallbagBackingStore(this.props.initialState)
+    this.store = createStore(reducer, backingStore)
+    observe(nextState => this.forceUpdate())(backingStore.source) // 0
+  }
+
+  render() {
+    return (
+      <StoreContext.Provider
+        value={{
+          state: this.store.getState(),
+          dispatch: this.store.dispatch,
+        }}
+      >
+        {this.props.children}
+      </StoreContext.Provider>
+    )
+  }
+}
+
+const ExampleConsumer = () => (
+  <React.Fragment>
+    <p>
+      Count:{' '}
+      <StoreContext.Consumer>
+        {({state}) => state.counter}
+      </StoreContext.Consumer>
+    </p>
+    <StoreContext.Consumer>
+      {({dispatch}) => (
+        <p>
+          <button onClick={() => dispatch({type: actions.dec})}>- Dec</button>
+          <button onClick={() => dispatch({type: actions.inc})}>Inc +</button>
+        </p>
+      )}
+    </StoreContext.Consumer>
+  </React.Fragment>
+)
+
 class App extends Component {
   render() {
     return (
       <React.Fragment>
-        <h2>React-Backed Store</h2>
         <ReactBackedProvider initialState={{counter: 0}}>
-          <p>
-            Count:{' '}
-            <StoreContext.Consumer>
-              {({state}) => state.counter}
-            </StoreContext.Consumer>
-          </p>
-          <StoreContext.Consumer>
-            {({dispatch}) => (
-              <p>
-                <button onClick={() => dispatch({type: actions.dec})}>
-                  - Dec
-                </button>
-                <button onClick={() => dispatch({type: actions.inc})}>
-                  Inc +
-                </button>
-              </p>
-            )}
-          </StoreContext.Consumer>
+          <h2>React-Backed Store</h2>
+          <ExampleConsumer />
         </ReactBackedProvider>
-        <h2>Generic Object Store</h2>
         <GenericBackedProvider initialState={{counter: 0}}>
-          <p>
-            Count:{' '}
-            <StoreContext.Consumer>
-              {({state}) => state.counter}
-            </StoreContext.Consumer>
-          </p>
-          <StoreContext.Consumer>
-            {({dispatch}) => (
-              <p>
-                <button onClick={() => dispatch({type: actions.dec})}>
-                  - Dec
-                </button>
-                <button onClick={() => dispatch({type: actions.inc})}>
-                  Inc +
-                </button>
-              </p>
-            )}
-          </StoreContext.Consumer>
+          <h2>Generic Object Store</h2>
+          <ExampleConsumer />
         </GenericBackedProvider>
+        <CallbagBackedProvider initialState={{counter: 0}}>
+          <h2>Callbag Store</h2>
+          <ExampleConsumer />
+        </CallbagBackedProvider>
       </React.Fragment>
     )
   }
