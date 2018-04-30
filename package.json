@@ -15,5 +15,26 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "prettier": {
+    "bracketSpacing": false,
+    "printWidth": 80,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "semi": false
+  },
+  "eslintConfig": {
+    "extends": [
+      "react",
+      "eslint:recommended"
+    ],
+    "parser": "babel-eslint",
+    "env": {
+      "browser": true,
+      "node": true
+    }
+  },
+  "devDependencies": {
+    "eslint-config-react": "^1.1.7"
   }
 }
