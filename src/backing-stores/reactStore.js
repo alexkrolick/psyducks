@@ -1,5 +1,5 @@
 import React, {Component} from 'react'
-import {createStore} from './psyducks'
+import {createStore} from '../psyducks'
 
 const StoreContext = React.createContext()
 
@@ -36,15 +36,15 @@ class Provider extends Component {
 
 const Example = () => (
   <React.Fragment>
-    <p>
+    <span>
       Count: <Consumer>{({state}) => state.counter}</Consumer>
-    </p>
+    </span>
     <Consumer>
       {({dispatch}) => (
-        <p>
+        <span>
           <button onClick={() => dispatch({type: 'DEC'})}>- Dec</button>
           <button onClick={() => dispatch({type: 'INC'})}>Inc +</button>
-        </p>
+        </span>
       )}
     </Consumer>
   </React.Fragment>
