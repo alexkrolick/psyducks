@@ -18,7 +18,7 @@ const Consumer = StoreContext.Consumer
 class Provider extends Component {
   store = createStore(
     this.props.reducer,
-    createPlainObjectBackingStore(this.props.initialState)
+    createPlainObjectBackingStore(this.props.initialState),
   )
 
   dispatch = (...args) => {
@@ -65,4 +65,10 @@ const Example = () => (
   </React.Fragment>
 )
 
-export {Provider, Consumer, StoreContext, Example}
+export {
+  Provider,
+  Consumer,
+  StoreContext,
+  Example,
+  createPlainObjectBackingStore,
+}

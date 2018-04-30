@@ -70,4 +70,4 @@ const Example = () => (
   </React.Fragment>
 )
 
-export {Provider, Consumer, StoreContext, Example}
+export {Provider, Consumer, StoreContext, Example, createCallbagBackingStore}

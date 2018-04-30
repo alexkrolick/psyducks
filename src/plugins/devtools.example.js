@@ -1,20 +1,22 @@
 import React, {Component} from 'react'
 import {createStore} from '../psyducks'
+import {createReactBackingStore} from '../backing-stores/reactStore'
+import {enhanceReducerWithDevtools, enhanceStoreWithDevtools} from './devtools'
 
 const StoreContext = React.createContext()
 
 const Consumer = StoreContext.Consumer
 
-const createReactBackingStore = (instance, key) => ({
-  getState: () => instance.state[key],
-  setState: nextState => instance.setState({[key]: nextState}),
-})
-
 class Provider extends Component {
-  store = createStore(
-    this.props.reducer,
-    createReactBackingStore(this, 'storeData'),
-  )
+  constructor(props) {
+    super(props)
+    const {reducer} = props
+    const store = createStore(
+      enhanceReducerWithDevtools(reducer),
+      createReactBackingStore(this, 'storeData'),
+    )
+    this.store = enhanceStoreWithDevtools(store)
+  }
 
   state = {
     storeData: {...this.props.initialState},
@@ -50,4 +52,4 @@ const Example = () => (
   </React.Fragment>
 )
 
-export {Provider, Consumer, StoreContext, Example, createReactBackingStore}
+export {Provider, Consumer, Example}
