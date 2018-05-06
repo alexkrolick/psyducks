@@ -55,6 +55,13 @@ Run locally: `yarn install && yarn start`
 
 [![Edit psyducks](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/alexkrolick/psyducks/tree/master/)
 
+## Alternatives
+
+- https://github.com/developit/unistore
+- https://github.com/jamiebuilds/unstated
+- https://github.com/reactjs/redux
+- https://github.com/mobxjs/mobx
+
 ---
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
